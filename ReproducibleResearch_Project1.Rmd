@@ -1,0 +1,89 @@
+This is R markdown for project 1 in course Reproducbile research.
+
+#Auhor : Saeedeh Salimianrizi
+
+##preparing data
+```{r preparing data, echo = TRUE}
+data <- read.csv("activity.csv")
+head(data)
+summary(data)
+```
+
+
+##total number of steps taken per day
+```{r total number of steps taken per day, echo = TRUE}
+steps_by_day <- aggregate(steps ~ date, data, FUN = sum)
+```
+
+##histogram of the total number of steps taken each day
+```{r hist, echo = TRUE}
+hist(steps_by_day$steps, breaks = 10, col = "blue", main = "Total Steps Per Day", xlab = "Number of Steps")
+```
+
+##mean and median of the total number of steps taken per day
+```{r mean and median, echo = TRUE}
+mean(steps_by_day$steps , na.rm= TRUE)
+median(steps_by_day$steps , na.rm= TRUE)
+```
+
+## time series plot of the 5-minute interval and and average number of steps taken
+```{r time series plot, echo = TRUE}
+average_steps_by_interval <- aggregate(steps ~ interval, data, FUN = mean)
+plot(average_steps_by_interval$interval, average_steps_by_interval$steps, type = "l", main = "Average Steps~Intervals",xlab = "Intervals", ylab = "Average Steps")
+```
+
+
+##5-minute interval with the max number of steps
+```{r 5 minute interval the max number of steps, echo =  TRUE}
+max_average_step <- max(average_steps_by_interval$steps)
+average_steps_by_interval[average_steps_by_interval$steps == max_average_step,]
+```
+
+
+##total number of missing values in the data set
+```{r number of missing values in the data set, echo = TRUE}
+sum(is.na(data))
+```
+
+
+##impute data, replacing NA values with the mean values of the same interval
+```{r impute data, echo = TRUE}
+data_noNA <- transform(data, steps = ifelse(is.na(data$steps), average_steps_by_interval$steps[match(data$interval, average_steps_by_interval$interval)], data$steps))
+steps_by_day_noNA <- aggregate(steps ~ date, data_noNA, FUN = sum)
+```
+
+
+##hist of real data
+```{r comparing hist of real and imputed data}
+hist(steps_by_day$steps,  breaks = 10, col = "blue", main = "Total Steps Per Day", xlab = "Number of Steps")
+```
+
+
+## hist of imputed data
+```{r host of imputed data}
+hist(steps_by_day_noNA$steps, breaks = 10,  col = "red", main = "Total Steps Per Day", xlab = "Number of Steps")
+```
+
+### as you can see the histogram of real and imputed data are slightly different
+
+##mean and the median for the total number of steps taken per day using imputed data
+```{r mean anf the median for imputed data, echo = TRUE}
+mean(steps_by_day_noNA$steps)
+median(steps_by_day_noNA$steps)
+```
+
+### as you can see the mean value stayed the same after imputing data but median increased slightly.
+##identify weekday and weekend related data
+```{r weekday/weekend related data, echo = TRUE}
+data_noNA$weekday <- ifelse(weekdays(as.Date(data_noNA$date))%in%c("Sunday", "Saturday"), "Weekend", "Workday")
+```
+
+
+## time series plot of the 5-minute interval  and the average number of steps takeN for weekday days or weekend days
+```{r time series}
+average_steps_by_interval_noNA <- aggregate(steps ~ interval + weekday, data_noNA, FUN = mean)
+
+library(lattice)
+xyplot(average_steps_by_interval_noNA$steps ~ average_steps_by_interval_noNA$interval|average_steps_by_interval_noNA$weekday, type = "l", 
+layout = c(1,2), xlab = "Interval", ylab= "Average Steps Per Day", main = "Average Steps per Day by Interval")
+```
